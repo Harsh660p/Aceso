@@ -1,18 +1,18 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Heart, Target, Users, Sparkles, ArrowLeft } from "lucide-react";
-import { Link } from "wouter";
+import { useLocation } from "wouter";
 
 export default function About() {
+  const [, setLocation] = useLocation();
+
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-5xl px-4 py-12 space-y-12">
         <div className="flex items-center gap-4">
-          <Link href="/">
-            <Button variant="ghost" size="icon" data-testid="button-back">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
+          <Button variant="ghost" size="icon" onClick={() => setLocation("/")} data-testid="button-back">
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
           <div>
             <h1 className="text-4xl font-bold text-foreground">About Aceso</h1>
             <p className="text-muted-foreground mt-2">Built with care by origin8</p>
@@ -112,11 +112,9 @@ export default function About() {
 
         <div className="text-center py-8 space-y-4">
           <h3 className="text-2xl font-semibold">Ready to begin your wellness journey?</h3>
-          <Link href="/signup">
-            <Button size="lg" data-testid="button-get-started">
-              Get Started Today
-            </Button>
-          </Link>
+          <Button size="lg" onClick={() => setLocation("/signup")} data-testid="button-get-started">
+            Get Started Today
+          </Button>
         </div>
 
         <footer className="text-center text-sm text-muted-foreground border-t pt-8">

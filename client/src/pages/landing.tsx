@@ -1,9 +1,11 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Brain, Heart, TrendingUp, MessageSquare, Shield, Sparkles } from "lucide-react";
-import { Link } from "wouter";
+import { useLocation } from "wouter";
 
 export default function Landing() {
+  const [, setLocation] = useLocation();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5">
       <div className="mx-auto max-w-7xl px-4 py-12 space-y-20">
@@ -18,12 +20,12 @@ export default function Landing() {
             </div>
           </div>
           <div className="flex gap-3">
-            <Link href="/login">
-              <Button variant="ghost" data-testid="button-login">Login</Button>
-            </Link>
-            <Link href="/signup">
-              <Button data-testid="button-signup">Get Started</Button>
-            </Link>
+            <Button variant="ghost" onClick={() => setLocation("/login")} data-testid="button-login">
+              Login
+            </Button>
+            <Button onClick={() => setLocation("/signup")} data-testid="button-signup">
+              Get Started
+            </Button>
           </div>
         </header>
 
@@ -41,16 +43,12 @@ export default function Landing() {
             Track your emotions, gain insights, and improve your mental wellbeing with AI-powered guidance from origin8
           </p>
           <div className="flex gap-4 justify-center pt-4">
-            <Link href="/signup">
-              <Button size="lg" data-testid="button-get-started">
-                Start Your Journey
-              </Button>
-            </Link>
-            <Link href="/about">
-              <Button size="lg" variant="outline" data-testid="button-learn-more">
-                Learn More
-              </Button>
-            </Link>
+            <Button size="lg" onClick={() => setLocation("/signup")} data-testid="button-get-started">
+              Start Your Journey
+            </Button>
+            <Button size="lg" variant="outline" onClick={() => setLocation("/about")} data-testid="button-learn-more">
+              Learn More
+            </Button>
           </div>
         </section>
 
@@ -133,19 +131,21 @@ export default function Landing() {
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Join thousands of users who trust Aceso by origin8 for their mental wellness
           </p>
-          <Link href="/signup">
-            <Button size="lg" data-testid="button-cta-signup">
-              Create Free Account
-            </Button>
-          </Link>
+          <Button size="lg" onClick={() => setLocation("/signup")} data-testid="button-cta-signup">
+            Create Free Account
+          </Button>
         </section>
 
         <footer className="text-center text-sm text-muted-foreground border-t pt-8">
           <p>© 2025 origin8. All rights reserved.</p>
           <div className="flex gap-6 justify-center mt-4">
-            <Link href="/about">
-              <a className="hover:text-foreground" data-testid="link-about">About Us</a>
-            </Link>
+            <button
+              className="hover:text-foreground cursor-pointer"
+              onClick={() => setLocation("/about")}
+              data-testid="link-about"
+            >
+              About Us
+            </button>
           </div>
         </footer>
       </div>

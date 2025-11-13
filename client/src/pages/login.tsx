@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Heart, AlertCircle, Loader2 } from "lucide-react";
-import { Link, useLocation } from "wouter";
+import { useLocation } from "wouter";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/hooks/use-toast";
 
@@ -105,20 +105,20 @@ export default function Login() {
           <div className="mt-6 text-center text-sm">
             <p className="text-muted-foreground">
               Don't have an account?{" "}
-              <Link href="/signup">
-                <a className="text-primary hover:underline" data-testid="link-signup">
-                  Sign up
-                </a>
-              </Link>
+              <button
+                className="text-primary hover:underline"
+                onClick={() => setLocation("/signup")}
+                data-testid="link-signup"
+              >
+                Sign up
+              </button>
             </p>
           </div>
 
           <div className="mt-6 text-center">
-            <Link href="/">
-              <Button variant="ghost" size="sm" data-testid="button-back-home">
-                Back to Home
-              </Button>
-            </Link>
+            <Button variant="ghost" size="sm" onClick={() => setLocation("/")} data-testid="button-back-home">
+              Back to Home
+            </Button>
           </div>
         </CardContent>
       </Card>
