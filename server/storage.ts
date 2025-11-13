@@ -1,7 +1,11 @@
-import { type JournalEntry, type InsertJournalEntry, type MoodInsight, type CopingStrategy } from "@shared/schema";
+import { type JournalEntry, type InsertJournalEntry, type MoodInsight, type CopingStrategy, type User, type UserProfile } from "@shared/schema";
 import { randomUUID } from "crypto";
+import bcrypt from "bcryptjs";
 
 export interface IStorage {
+  createUser(email: string, passwordHash: string, displayName: string, teamName?: string): Promise<User>;
+  findUserByEmail(email: string): Promise<User | undefined>;
+  findUserById(id: string): Promise<User | undefined>;
   createJournalEntry(entry: InsertJournalEntry): Promise<JournalEntry>;
   getJournalEntries(): Promise<JournalEntry[]>;
   getJournalEntry(id: string): Promise<JournalEntry | undefined>;
@@ -10,10 +14,35 @@ export interface IStorage {
 }
 
 export class MemStorage implements IStorage {
+  private users: Map<string, User>;
   private journalEntries: Map<string, JournalEntry>;
 
   constructor() {
+    this.users = new Map();
     this.journalEntries = new Map();
+  }
+
+  async createUser(email: string, passwordHash: string, displayName: string, teamName?: string): Promise<User> {
+    const id = randomUUID();
+    const user: User = {
+      id,
+      email: email.toLowerCase(),
+      passwordHash,
+      displayName,
+      teamName: teamName || null,
+      createdAt: new Date(),
+    };
+    this.users.set(id, user);
+    return user;
+  }
+
+  async findUserByEmail(email: string): Promise<User | undefined> {
+    const normalizedEmail = email.toLowerCase();
+    return Array.from(this.users.values()).find(u => u.email === normalizedEmail);
+  }
+
+  async findUserById(id: string): Promise<User | undefined> {
+    return this.users.get(id);
   }
 
   async createJournalEntry(insertEntry: InsertJournalEntry): Promise<JournalEntry> {
