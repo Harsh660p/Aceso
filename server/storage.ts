@@ -22,7 +22,7 @@ export class MemStorage implements IStorage {
     this.journalEntries = new Map();
   }
 
-  async createUser(email: string, passwordHash: string, displayName: string, teamName?: string): Promise<User> {
+  async createUser(email: string, passwordHash: string, displayName: string, teamName?: string | null): Promise<User> {
     const id = randomUUID();
     const user: User = {
       id,

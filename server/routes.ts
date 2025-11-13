@@ -93,7 +93,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/auth/logout", async (req, res) => {
-    req.session.destroy((err) => {
+    req.session.destroy((err: any) => {
       if (err) {
         res.status(500).json({ message: "Failed to logout" });
         return;

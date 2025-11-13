@@ -63,7 +63,7 @@ export function AppSidebar() {
       <SidebarHeader className="p-6 border-b">
         <div className="space-y-1">
           <h2 className="text-xl font-semibold">Aceso</h2>
-          <p className="text-sm text-muted-foreground">Wellness Companion</p>
+          <p className="text-sm text-muted-foreground">by origin8</p>
         </div>
       </SidebarHeader>
       <SidebarContent>
