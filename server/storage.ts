@@ -1,6 +1,5 @@
-import { type JournalEntry, type InsertJournalEntry, type MoodInsight, type CopingStrategy, type User, type UserProfile } from "@shared/schema";
+import { type JournalEntry, type InsertJournalEntry, type MoodInsight, type CopingStrategy, type User, users, journalEntries } from "@shared/schema";
 import { randomUUID } from "crypto";
-import bcrypt from "bcryptjs";
 
 export interface IStorage {
   createUser(email: string, passwordHash: string, displayName: string, teamName?: string): Promise<User>;

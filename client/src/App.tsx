@@ -16,6 +16,7 @@ import Insights from "@/pages/insights";
 import Assistant from "@/pages/assistant";
 import Strategies from "@/pages/strategies";
 import Connect from "@/pages/connect";
+import Therapists from "@/pages/therapists";
 import Landing from "@/pages/landing";
 import About from "@/pages/about";
 import SignUp from "@/pages/signup";
@@ -43,6 +44,7 @@ function ProtectedRouter() {
       <Route path="/assistant" component={Assistant} />
       <Route path="/strategies" component={Strategies} />
       <Route path="/connect" component={Connect} />
+      <Route path="/therapists" component={Therapists} />
       <Route component={NotFound} />
     </Switch>
   );

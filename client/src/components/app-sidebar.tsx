@@ -1,4 +1,4 @@
-import { Home, BookOpen, TrendingUp, MessageSquare, Heart, UserPlus } from "lucide-react";
+import { Home, BookOpen, TrendingUp, MessageSquare, Heart, UserPlus, Users } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -41,6 +41,12 @@ const menuItems = [
     url: "/strategies",
     icon: Heart,
     testId: "nav-strategies",
+  },
+  {
+    title: "Find Therapist",
+    url: "/therapists",
+    icon: Users,
+    testId: "nav-therapists",
   },
   {
     title: "Connect",

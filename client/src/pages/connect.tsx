@@ -41,19 +41,24 @@ export default function Connect() {
 
   const crisisResources = [
     {
-      name: "National Suicide Prevention Lifeline",
-      phone: "988",
-      description: "24/7 free and confidential support",
+      name: "KIRAN Mental Health Helpline",
+      phone: "1800-599-0019",
+      description: "24/7 toll-free mental health support in 13 languages",
     },
     {
-      name: "Crisis Text Line",
-      phone: "Text HOME to 741741",
-      description: "Free, 24/7 crisis support via text",
+      name: "Vandrevala Foundation Helpline",
+      phone: "+91 9999 666 555",
+      description: "24/7 crisis intervention and emotional support",
     },
     {
-      name: "SAMHSA National Helpline",
-      phone: "1-800-662-4357",
-      description: "Treatment referral and information service",
+      name: "iCall Psychosocial Helpline",
+      phone: "+91 9152987821",
+      description: "Professional counseling, Mon-Sat 8 AM to 10 PM",
+    },
+    {
+      name: "AASRA Suicide Prevention",
+      phone: "+91 9820466726",
+      description: "24/7 crisis intervention in Mumbai",
     },
   ];
 
