@@ -5,11 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Send, Bot, User, Loader2, ArrowLeft, Mic, MicOff } from "lucide-react";
+import { Send, Bot, User, Loader2, ArrowLeft, Mic, MicOff, Phone, PhoneOff, Volume2 } from "lucide-react";
 import { Link } from "wouter";
 import type { AssistantMessage } from "@shared/schema";
+import Vapi from "@vapi-ai/web";
 
 export default function Assistant() {
   const [messages, setMessages] = useState<AssistantMessage[]>([
@@ -22,8 +24,13 @@ export default function Assistant() {
   ]);
   const [inputMessage, setInputMessage] = useState("");
   const [isListening, setIsListening] = useState(false);
+  const [isCallActive, setIsCallActive] = useState(false);
+  const [isCallConnecting, setIsCallConnecting] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [volumeLevel, setVolumeLevel] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+  const vapiRef = useRef<any>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -53,7 +60,82 @@ export default function Assistant() {
         setIsListening(false);
       };
     }
-  }, []);
+
+    const vapiApiKey = import.meta.env.VITE_VAPI_API_KEY;
+    if (vapiApiKey) {
+      vapiRef.current = new Vapi(vapiApiKey);
+
+      vapiRef.current.on('call-start', () => {
+        setIsCallActive(true);
+        setIsCallConnecting(false);
+        toast({
+          title: "Call started",
+          description: "You're now connected to your wellness assistant",
+        });
+      });
+
+      vapiRef.current.on('call-end', () => {
+        setIsCallActive(false);
+        setIsCallConnecting(false);
+        setIsMuted(false);
+        setVolumeLevel(0);
+        toast({
+          title: "Call ended",
+          description: "Your voice session has ended",
+        });
+      });
+
+      vapiRef.current.on('speech-start', () => {
+        console.log('Assistant speaking');
+      });
+
+      vapiRef.current.on('speech-end', () => {
+        console.log('Assistant finished speaking');
+      });
+
+      vapiRef.current.on('volume-level', (volume: number) => {
+        setVolumeLevel(volume);
+      });
+
+      vapiRef.current.on('message', (message: any) => {
+        console.log('Vapi message:', message);
+        if (message.type === 'transcript' && message.role === 'user') {
+          const userMessage: AssistantMessage = {
+            id: `${Date.now()}-user-voice`,
+            role: 'user',
+            content: message.transcript,
+            timestamp: new Date(),
+          };
+          setMessages((prev) => [...prev, userMessage]);
+        } else if (message.type === 'transcript' && message.role === 'assistant') {
+          const assistantMessage: AssistantMessage = {
+            id: `${Date.now()}-assistant-voice`,
+            role: 'assistant',
+            content: message.transcript,
+            timestamp: new Date(),
+          };
+          setMessages((prev) => [...prev, assistantMessage]);
+        }
+      });
+
+      vapiRef.current.on('error', (error: any) => {
+        console.error('Vapi error:', error);
+        setIsCallActive(false);
+        setIsCallConnecting(false);
+        toast({
+          title: "Call error",
+          description: error.message || "An error occurred during the call",
+          variant: "destructive",
+        });
+      });
+    }
+
+    return () => {
+      if (vapiRef.current) {
+        vapiRef.current.stop();
+      }
+    };
+  }, [toast]);
 
   const chatMutation = useMutation({
     mutationFn: async (message: string) => {
@@ -121,6 +203,65 @@ export default function Assistant() {
     }
   };
 
+  const startVoiceCall = async () => {
+    if (!vapiRef.current) {
+      toast({
+        title: "Voice assistant not available",
+        description: "Vapi AI is not configured. Please contact support.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsCallConnecting(true);
+
+    try {
+      await vapiRef.current.start({
+        model: {
+          provider: "openai",
+          model: "gpt-4o-mini",
+          messages: [
+            {
+              role: "system",
+              content: "You are a compassionate mental health and emotional wellness AI companion. Your role is to provide empathetic support, active listening, and gentle guidance to users dealing with emotional challenges, stress, anxiety, or general mental wellness needs. Always be non-judgmental, validating, and supportive. If a user expresses thoughts of self-harm or crisis, encourage them to seek professional help immediately and provide crisis resources. Keep responses conversational, warm, and accessible."
+            }
+          ]
+        },
+        voice: {
+          provider: "openai",
+          voiceId: "nova"
+        },
+        transcriber: {
+          provider: "deepgram",
+          model: "nova-2"
+        },
+        name: "Wellness Companion"
+      });
+    } catch (error: any) {
+      console.error('Failed to start call:', error);
+      setIsCallConnecting(false);
+      toast({
+        title: "Failed to start call",
+        description: error.message || "Could not connect to voice assistant",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const endVoiceCall = () => {
+    if (vapiRef.current) {
+      vapiRef.current.stop();
+    }
+  };
+
+  const toggleMute = () => {
+    if (vapiRef.current && isCallActive) {
+      const newMutedState = !isMuted;
+      vapiRef.current.setMuted(newMutedState);
+      setIsMuted(newMutedState);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-4xl px-4 py-8 space-y-6">
@@ -133,17 +274,68 @@ export default function Assistant() {
 
         <Card className="h-[calc(100vh-16rem)]">
           <CardHeader className="border-b">
-            <div className="flex items-center gap-3">
-              <Avatar>
-                <AvatarFallback className="bg-primary text-primary-foreground">
-                  <Bot className="h-5 w-5" />
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <CardTitle className="text-lg">Wellness Companion</CardTitle>
-                <CardDescription>
-                  Always here to listen and support
-                </CardDescription>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <Avatar>
+                  <AvatarFallback className="bg-primary text-primary-foreground">
+                    <Bot className="h-5 w-5" />
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <CardTitle className="text-lg">Wellness Companion</CardTitle>
+                  <CardDescription>
+                    Always here to listen and support
+                  </CardDescription>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {isCallActive && (
+                  <Badge variant="default" className="gap-1" data-testid="badge-call-active">
+                    <Volume2 className="h-3 w-3" />
+                    Voice Active
+                  </Badge>
+                )}
+                {!isCallActive && !isCallConnecting && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={startVoiceCall}
+                    className="gap-2"
+                    data-testid="button-start-voice-call"
+                  >
+                    <Phone className="h-4 w-4" />
+                    Voice Call
+                  </Button>
+                )}
+                {isCallConnecting && (
+                  <Button variant="default" size="sm" disabled data-testid="button-voice-connecting">
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Connecting...
+                  </Button>
+                )}
+                {isCallActive && (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={toggleMute}
+                      className={isMuted ? "bg-destructive/10" : ""}
+                      data-testid="button-toggle-mute"
+                    >
+                      {isMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={endVoiceCall}
+                      className="gap-2"
+                      data-testid="button-end-voice-call"
+                    >
+                      <PhoneOff className="h-4 w-4" />
+                      End Call
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </CardHeader>
