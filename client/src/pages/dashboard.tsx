@@ -1,14 +1,18 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Mic, MessageSquare, TrendingUp, Calendar, Heart, Brain } from "lucide-react";
 import { Link } from "wouter";
-import { format } from "date-fns";
+import { format, isSameDay, startOfDay } from "date-fns";
 import type { JournalEntry, MoodInsight } from "@shared/schema";
 
 export default function Dashboard() {
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  
   const { data: entries, isLoading: entriesLoading } = useQuery<JournalEntry[]>({
     queryKey: ["/api/journal"],
   });
@@ -21,7 +25,26 @@ export default function Dashboard() {
     (entry) => new Date(entry.timestamp).toDateString() === new Date().toDateString()
   ) || [];
 
+  const selectedDayEntries = entries?.filter((entry) => 
+    selectedDate && isSameDay(new Date(entry.timestamp), selectedDate)
+  ) || [];
+
   const recentEntries = entries?.slice(0, 5) || [];
+
+  const entriesByDate = entries?.reduce((acc, entry) => {
+    const entryDate = startOfDay(new Date(entry.timestamp));
+    const dateKey = entryDate.getTime();
+    if (!acc[dateKey]) {
+      acc[dateKey] = {
+        date: entryDate,
+        entries: []
+      };
+    }
+    acc[dateKey].entries.push(entry);
+    return acc;
+  }, {} as Record<number, { date: Date; entries: JournalEntry[] }>) || {};
+
+  const daysWithEntries = Object.values(entriesByDate).map(item => item.date);
 
   const getMoodColor = (rating: number | null | undefined) => {
     if (!rating) return "bg-muted";
@@ -29,6 +52,18 @@ export default function Dashboard() {
     if (rating >= 3) return "bg-blue-500/20 text-blue-700 dark:text-blue-400";
     if (rating >= 2) return "bg-yellow-500/20 text-yellow-700 dark:text-yellow-400";
     return "bg-red-500/20 text-red-700 dark:text-red-400";
+  };
+
+  const getDayMoodColor = (date: Date) => {
+    const dateKey = startOfDay(date).getTime();
+    const dayData = entriesByDate[dateKey];
+    if (!dayData || dayData.entries.length === 0) return "bg-primary";
+    
+    const avgMood = dayData.entries.reduce((sum, e) => sum + (e.moodRating || 0), 0) / dayData.entries.length;
+    if (avgMood >= 4) return "bg-green-500";
+    if (avgMood >= 3) return "bg-blue-500";
+    if (avgMood >= 2) return "bg-yellow-500";
+    return "bg-red-500";
   };
 
   return (
@@ -98,6 +133,175 @@ export default function Dashboard() {
                     {insights?.streakDays && insights.streakDays > 0 ? "Great consistency!" : "Start your journey"}
                   </p>
                 </>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Card data-testid="card-calendar">
+            <CardHeader>
+              <CardTitle>Journal Calendar</CardTitle>
+              <CardDescription>
+                Select a day to view your entries
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {entriesLoading ? (
+                <Skeleton className="h-[350px] w-full" />
+              ) : (
+                <div className="space-y-4">
+                  <CalendarComponent
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={setSelectedDate}
+                    className="rounded-md border"
+                    modifiers={{
+                      hasEntry: daysWithEntries,
+                      hasUnratedEntry: daysWithEntries.filter(date => {
+                        const dateKey = startOfDay(date).getTime();
+                        const dayData = entriesByDate[dateKey];
+                        if (!dayData) return false;
+                        const ratedEntries = dayData.entries.filter(e => e.moodRating !== null && e.moodRating !== undefined);
+                        return ratedEntries.length === 0;
+                      }),
+                      hasGreatMood: daysWithEntries.filter(date => {
+                        const dateKey = startOfDay(date).getTime();
+                        const dayData = entriesByDate[dateKey];
+                        if (!dayData) return false;
+                        const ratedEntries = dayData.entries.filter(e => e.moodRating !== null && e.moodRating !== undefined);
+                        if (ratedEntries.length === 0) return false;
+                        const avgMood = ratedEntries.reduce((sum, e) => sum + (e.moodRating || 0), 0) / ratedEntries.length;
+                        return avgMood >= 4;
+                      }),
+                      hasGoodMood: daysWithEntries.filter(date => {
+                        const dateKey = startOfDay(date).getTime();
+                        const dayData = entriesByDate[dateKey];
+                        if (!dayData) return false;
+                        const ratedEntries = dayData.entries.filter(e => e.moodRating !== null && e.moodRating !== undefined);
+                        if (ratedEntries.length === 0) return false;
+                        const avgMood = ratedEntries.reduce((sum, e) => sum + (e.moodRating || 0), 0) / ratedEntries.length;
+                        return avgMood >= 3 && avgMood < 4;
+                      }),
+                      hasOkayMood: daysWithEntries.filter(date => {
+                        const dateKey = startOfDay(date).getTime();
+                        const dayData = entriesByDate[dateKey];
+                        if (!dayData) return false;
+                        const ratedEntries = dayData.entries.filter(e => e.moodRating !== null && e.moodRating !== undefined);
+                        if (ratedEntries.length === 0) return false;
+                        const avgMood = ratedEntries.reduce((sum, e) => sum + (e.moodRating || 0), 0) / ratedEntries.length;
+                        return avgMood >= 2 && avgMood < 3;
+                      }),
+                      hasLowMood: daysWithEntries.filter(date => {
+                        const dateKey = startOfDay(date).getTime();
+                        const dayData = entriesByDate[dateKey];
+                        if (!dayData) return false;
+                        const ratedEntries = dayData.entries.filter(e => e.moodRating !== null && e.moodRating !== undefined);
+                        if (ratedEntries.length === 0) return false;
+                        const avgMood = ratedEntries.reduce((sum, e) => sum + (e.moodRating || 0), 0) / ratedEntries.length;
+                        return avgMood >= 0 && avgMood < 2;
+                      }),
+                    }}
+                    modifiersStyles={{
+                      hasEntry: { fontWeight: 'bold' },
+                      hasUnratedEntry: { fontWeight: 'bold' },
+                      hasGreatMood: { fontWeight: 'bold' },
+                      hasGoodMood: { fontWeight: 'bold' },
+                      hasOkayMood: { fontWeight: 'bold' },
+                      hasLowMood: { fontWeight: 'bold' },
+                    }}
+                    modifiersClassNames={{
+                      hasEntry: 'relative after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-1.5 after:h-1.5 after:rounded-full',
+                      hasUnratedEntry: 'after:bg-primary',
+                      hasGreatMood: 'after:bg-green-500',
+                      hasGoodMood: 'after:bg-blue-500',
+                      hasOkayMood: 'after:bg-yellow-500',
+                      hasLowMood: 'after:bg-red-500',
+                    }}
+                    data-testid="calendar-journal"
+                  />
+                  <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                      <span>Great</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                      <span>Good</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+                      <span>Okay</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                      <span>Low</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card data-testid="card-selected-day">
+            <CardHeader>
+              <CardTitle>
+                {selectedDate ? format(selectedDate, "MMMM d, yyyy") : "Select a Date"}
+              </CardTitle>
+              <CardDescription>
+                {selectedDayEntries.length === 0
+                  ? "No entries for this day"
+                  : `${selectedDayEntries.length} ${selectedDayEntries.length === 1 ? "entry" : "entries"}`}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {selectedDayEntries.length === 0 ? (
+                <div className="py-12 text-center">
+                  <p className="text-muted-foreground mb-4">
+                    No journal entries for this day yet.
+                  </p>
+                  <Link href="/journal">
+                    <Button size="sm" data-testid="button-create-entry-for-day">
+                      Create Entry
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-4 max-h-[350px] overflow-y-auto">
+                  {selectedDayEntries.map((entry) => (
+                    <div
+                      key={entry.id}
+                      className="p-4 rounded-md border space-y-3"
+                      data-testid={`entry-preview-${entry.id}`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">
+                          {format(new Date(entry.timestamp), "h:mm a")}
+                        </span>
+                        {entry.moodRating && (
+                          <Badge variant="secondary" className={getMoodColor(entry.moodRating)} data-testid={`badge-entry-mood-${entry.id}`}>
+                            Mood: {entry.moodRating}/5
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm leading-relaxed line-clamp-2" data-testid={`text-entry-preview-${entry.id}`}>
+                        {entry.content}
+                      </p>
+                      {entry.emotions && (
+                        <div className="flex flex-wrap gap-1.5">
+                          <Badge variant="secondary" className="text-xs bg-primary/10 text-primary" data-testid={`badge-emotion-preview-${entry.id}`}>
+                            {entry.emotions.primaryEmotion}
+                          </Badge>
+                          {entry.emotions.secondaryEmotions?.slice(0, 2).map((emotion, idx) => (
+                            <Badge key={emotion} variant="outline" className="text-xs" data-testid={`badge-secondary-preview-${entry.id}-${idx}`}>
+                              {emotion}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               )}
             </CardContent>
           </Card>
