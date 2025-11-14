@@ -55,8 +55,9 @@ Preferred communication style: Simple, everyday language.
 ### External Dependencies
 
 **AI Services**:
-- **Google Gemini AI** (gemini-2.5-flash model): Powers the conversational AI assistant with system instructions for empathetic, supportive responses. Maintains conversation history (last 5 messages) for context. Configured to detect crisis situations and recommend professional resources.
+- **Google Gemini AI** (gemini-2.5-flash model): Powers the conversational text-based AI assistant with system instructions for empathetic, supportive responses. Maintains conversation history (last 5 messages) for context. Configured to detect crisis situations and recommend professional resources.
 - **OpenAI** (gpt-5 model): Handles emotional analysis of journal entries, providing structured JSON responses with emotion classification, sentiment scoring, confidence levels, intensity measurement, theme extraction, and supportive summaries.
+- **Vapi AI** (@vapi-ai/web SDK): Provides real-time voice conversation capabilities for the AI assistant. Integrates with OpenAI's GPT-4o-mini model for conversation and OpenAI's Nova voice for natural speech. Uses Deepgram Nova-2 for voice transcription. Voice sessions support mute/unmute controls, volume monitoring, and live transcription display in the chat interface. API key configured via VAPI_API_KEY environment variable and exposed to frontend as VITE_VAPI_API_KEY through client/.env.
 
 **Authentication**: Currently not implemented. The application assumes single-user or development mode without user authentication.
 
